@@ -174,7 +174,7 @@ int main() {
 
 
 ## RESULT:
-Thus the program has been executed by using CUDA to ________________.
+Thus, the program has been executed successfully by using CUDA to implement the Sobel edge detection filter in parallel on the GPU, detecting edges in the input image efficiently using CUDA threads. The output image clearly shows the prominent edges of the tiger, demonstrating successful Sobel filtering and GPU-based parallel image processing.
 
 Questions:
 
