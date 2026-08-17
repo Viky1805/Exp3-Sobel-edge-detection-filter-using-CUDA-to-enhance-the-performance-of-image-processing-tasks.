@@ -1,9 +1,9 @@
 # Exp3-Sobel-edge-detection-filter-using-CUDA-to-enhance-the-performance-of-image-processing-tasks.
 <h3>AIM:</h3>
-<h3>ENTER YOUR NAME Vignesh S </h3>
-<h3>ENTER YOUR REGISTER NO 212224110061 </h3>
+<h3>ENTER YOUR NAME - Vignesh S </h3>
+<h3>ENTER YOUR REGISTER NO - 212224110061 </h3>
 <h3>EX. NO 3 </h3>
-<h3>DATE 17-08-2026 </h3>
+<h3>DATE: 17-08-2026 </h3>
 <h1> <align=center> Sobel edge detection filter using CUDA </h3>
   Implement Sobel edge detection filtern using GPU.</h3>
 Experiment Details:
