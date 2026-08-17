@@ -36,10 +36,142 @@ Compare the output of your CUDA Sobel filter with a CPU-based Sobel filter imple
 Discuss the differences in execution time and output quality.
 
 ## PROGRAM:
-TYPE YOUR CODE HERE
+
+```
+%%writefile sobelEdgeDetectionFilter.cu
+#include <stdio.h>
+#include <stdlib.h>
+#include <cuda_runtime.h>
+#include <opencv2/opencv.hpp>
+#include <math.h>
+
+using namespace cv;
+
+__global__ void sobelFilter(unsigned char *srcImage, unsigned char *dstImage, unsigned int width, unsigned int height) {
+  int x = blockIdx.x * blockDim.x + threadIdx.x;
+  int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= width || y >= height)
+        return;
+
+    // Border pixels
+    if (x == 0 || y == 0 || x == width - 1 || y == height - 1) {
+        dstImage[y * width + x] = 0;
+        return;
+    }
+
+    int Gx =
+        -srcImage[(y - 1) * width + (x - 1)]
+        + srcImage[(y - 1) * width + (x + 1)]
+        - 2 * srcImage[y * width + (x - 1)]
+        + 2 * srcImage[y * width + (x + 1)]
+        - srcImage[(y + 1) * width + (x - 1)]
+        + srcImage[(y + 1) * width + (x + 1)];
+
+    int Gy =
+        -srcImage[(y - 1) * width + (x - 1)]
+        - 2 * srcImage[(y - 1) * width + x]
+        - srcImage[(y - 1) * width + (x + 1)]
+        + srcImage[(y + 1) * width + (x - 1)]
+        + 2 * srcImage[(y + 1) * width + x]
+        + srcImage[(y + 1) * width + (x + 1)];
+
+    int magnitude = abs(Gx) + abs(Gy);
+
+    if (magnitude > 255)
+        magnitude = 255;
+
+    dstImage[y * width + x] = (unsigned char)magnitude;
+
+
+
+
+
+}
+
+void checkCudaErrors(cudaError_t r) {
+    if (r != cudaSuccess) {
+        fprintf(stderr, "CUDA Error: %s\n", cudaGetErrorString(r));
+        exit(EXIT_FAILURE);
+    }
+}
+
+int main() {
+    // Read input image
+    Mat image = imread("tiger.jpeg", IMREAD_COLOR);
+
+    if (image.empty()) {
+        printf("Error: Image not found.\n");
+        return -1;
+    }
+
+    int width = image.cols;
+    int height = image.rows;
+    size_t imageSize = width * height * sizeof(unsigned char);
+
+    // Allocate host memory for output image
+    unsigned char *h_outputImage = (unsigned char *)malloc(imageSize);
+    if (h_outputImage == nullptr) {
+        fprintf(stderr, "Failed to allocate host memory\n");
+        return -1;
+    }
+
+    // Allocate device memory
+    unsigned char *d_inputImage, *d_outputImage;
+    checkCudaErrors(cudaMalloc(&d_inputImage, imageSize));
+    checkCudaErrors(cudaMalloc(&d_outputImage, imageSize));
+    checkCudaErrors(cudaMemcpy(d_inputImage, image.data, imageSize, cudaMemcpyHostToDevice));
+
+    // Define CUDA events for timing
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    // Launch kernel
+    dim3 blockSize(16, 16);
+    dim3 gridSize(ceil(width / 16.0), ceil(height / 16.0));
+
+    cudaEventRecord(start);
+    sobelFilter<<<gridSize,blockSize>>>(d_inputImage, d_outputImage, width, height);
+    cudaEventRecord(stop);
+
+    // Synchronize events
+    cudaEventSynchronize(stop);
+
+    // Calculate elapsed time
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+
+    // Copy result back to host
+    checkCudaErrors(cudaMemcpy(h_outputImage, d_outputImage, imageSize, cudaMemcpyDeviceToHost));
+
+    // Write output image
+    Mat outputImage(height, width, CV_8UC1, h_outputImage);
+    imwrite("output_sobel.jpeg", outputImage);
+
+    // Free memory
+    free(h_outputImage);
+    cudaFree(d_inputImage);
+    cudaFree(d_outputImage);
+
+    // Destroy CUDA events
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+
+    // Print elapsed time
+    printf("Total time taken: %f milliseconds\n", milliseconds);
+
+    return 0;
+}
+
+```
 
 ## OUTPUT:
-SHOW YOUR OUTPUT HERE
+
+<img width="640" height="479" alt="tiger" src="https://github.com/user-attachments/assets/3aa83138-22f7-4ad9-8ea6-ac75081055ea" />
+
+<img width="662" height="520" alt="image" src="https://github.com/user-attachments/assets/e2b2fda0-6de4-41f4-abf1-d8496d25e2bc" />
+
 
 ## RESULT:
 Thus the program has been executed by using CUDA to ________________.
